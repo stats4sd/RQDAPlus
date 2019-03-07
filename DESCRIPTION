@@ -8,8 +8,7 @@ Description: Shiny interface for additional analysis not implemented within RQDA
 License: What license is it under?
 Encoding: UTF-8
 LazyData: true
-Imports: 
-    RQDA,
+Imports: RQDA,
     shiny,
     dplyr,
     igraph,
