@@ -9,23 +9,23 @@ License: What license is it under?
 Encoding: UTF-8
 LazyData: true
 Imports: RQDA,
-    shiny,
-    dplyr,
-    igraph,
-    plyr,
-    reshape2,
-    DescTools,
-    RSQLite,
-    intervals,
-    DT,
-    wordcloud2,
-    tm,
-    stringr,
-    DBI,
-    R2HTML,
-    rstudioapi,
-    purrr,
-    Rcpp
+shiny,
+dplyr,
+igraph,
+plyr,
+reshape2,
+DescTools,
+RSQLite,
+intervals,
+DT,
+wordcloud2,
+tm,
+stringr,
+DBI,
+R2HTML,
+rstudioapi,
+purrr,
+Rcpp
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 6.1.0.9000
 LinkingTo: 
