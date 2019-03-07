@@ -12,7 +12,6 @@
 codeIncase <-function(case,code=NULL,output="df",files=NULL,connection=NULL){
   require(R2HTML)
   require(purrr)
-  require(RQDA)
   require(dplyr)
   require(RSQLite)
   require(rstudioapi)
