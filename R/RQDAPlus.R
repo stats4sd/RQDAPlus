@@ -133,12 +133,13 @@ if(length(unique(c(input$cases,input$codes)))>1){
        else{
             txt<-codeIncase(input$cases,input$codes,output = "df",connection=connection,files=input$files)$text
        }
-
+if(length(txt)>0){
      t1<-removePunctuation(tolower(unlist(str_split(stripWhitespace(txt)," "))))
      t1<-t1[!t1%in%stopwords("english")]
      t2<-data.frame(table(t1))
 
      wordcloud2(t2,size=0.4)
+   }
    })
 
    }
