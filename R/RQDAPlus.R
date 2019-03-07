@@ -46,6 +46,7 @@ server <- function(input, output,session) {
 
   con <- dbConnect(RSQLite::SQLite(), connection)
 
+
   observe({
 
  fc<-dbGetQuery(con,"select name,id from freecode")
@@ -125,12 +126,12 @@ if(length(unique(c(input$cases,input$codes)))>1){
          sources<-dbGetQuery(con,paste("select id from source where name IN",
                                       paste("('",paste(input$files,collapse="','"),"')",sep=""),sep=""))
          txt<-dbGetQuery(con,paste("select seltext from coding where fid IN",
-                         paste("('",paste(sources,collapse="','"),"')",sep=""),sep=""))$seltext
+                         paste("('",paste(sources$id,collapse="','"),"')",sep=""),sep=""))$seltext
        }
 
        }
        else{
-            txt<-codeIncase(input$cases,input$codes,output = "df",connection=connection)$text
+            txt<-codeIncase(input$cases,input$codes,output = "df",connection=connection,files=input$files)$text
        }
 
      t1<-removePunctuation(tolower(unlist(str_split(stripWhitespace(txt)," "))))
@@ -139,6 +140,7 @@ if(length(unique(c(input$cases,input$codes)))>1){
 
      wordcloud2(t2,size=0.4)
    })
+
    }
 
 # Run the application
