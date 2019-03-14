@@ -4,7 +4,8 @@
 \alias{code_overlap}
 \title{code_overlap}
 \usage{
-code_overlap(connection = NULL, files = NULL)
+code_overlap(connection = NULL, include = "all", case = NULL,
+  code = NULL, files = NULL)
 }
 \arguments{
 \item{connection}{.rqda project file}
