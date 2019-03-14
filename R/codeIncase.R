@@ -26,25 +26,24 @@ codeIncase <-function(case,code=NULL,output="df",files=NULL,connection=NULL){
   }
 
   #get matching cases
-  caseid<-dbGetQuery(con,paste("select name,id from freecode where name IN",
+  caseid<-dbGetQuery(con,paste("select name,id from cases where name IN",
                           paste("('",paste(case,collapse="','"),"')",sep=""),sep=""))
 
   #give error if no cases found
   if(any(!case%in%caseid$name)){
     tmp<-case[!case%in%caseid$name]
-    stop(paste("No code '",paste(tmp,collapse="','"),"' found in database",sep=""))
+    stop(paste("No case '",paste(tmp,collapse="','"),"' found in database",sep=""))
   }
 
 
-  pos<-dbGetQuery(con,paste("select fid,cid,selfirst,selend from coding where cid IN",
+  pos<-dbGetQuery(con,paste("select fid,caseid,selfirst,selend from caselinkage where caseid IN",
                        paste("('",paste(caseid$id,collapse="','"),"')",sep="")
                        ))
 
 
   coding<-dbGetQuery(con,"select cid,fid,selfirst,selend from coding")
-  freecode<-dbGetQuery(con,"select * from freecode")
-  cases<-dbGetQuery(con,"select * from cases")
-  caselinkage<-dbGetQuery(con,"select * from caselinkage")
+  freecode<-dbGetQuery(con,"select name,id from freecode")
+
   source<-dbGetQuery(con,"select name,id from source")
   colnames(source)<-c("filename","fid")
 
@@ -64,9 +63,7 @@ codeIncase <-function(case,code=NULL,output="df",files=NULL,connection=NULL){
 
     coding<-subset(coding,cid%in%as.integer(codingid$id))
   }
-  else{
-  coding<-subset(coding,!cid%in%as.integer(caseid$id))
-     }
+
 
   if(is.null(files)==FALSE){
     coding=subset(coding,filename%in%files)
@@ -78,7 +75,7 @@ codeIncase <-function(case,code=NULL,output="df",files=NULL,connection=NULL){
 
 
   outputlist<-map_df(pos$ID,function(x)
-    data.frame(subset(mutate(coding,Case=caseid$name[caseid$id==pos$cid[pos$ID==x]]),
+    data.frame(subset(mutate(coding,Case=caseid$name[caseid$id==pos$caseid[pos$ID==x]]),
                       fid==pos$fid[x]&selfirst>=pos$selfirst[x]&selend<=pos$selend[x])))
 
   if(nrow(outputlist)==0){
@@ -95,7 +92,7 @@ codeIncase <-function(case,code=NULL,output="df",files=NULL,connection=NULL){
   list1<-outputlist %>% inner_join(freecode,by=c("cid"="id"))%>%
     select(selfirst,name,filename,Case) %>% cbind(outputtext)
   colnames(list1)<-c("position","code","filename","Case","text")
-
+  list1$text<-trimws(list1$text)
   if(output=="HTML"){
     filename=paste("Output",ceiling(round(runif(1,1,1000))+as.numeric(Sys.time())/1000),sep="_")
   HTMLStart(outdir=getwd(),filename =filename,
@@ -115,7 +112,7 @@ codeIncase <-function(case,code=NULL,output="df",files=NULL,connection=NULL){
   }
 
   HTMLStop()
-  viewer(file.path(getwd(),paste(filename,".html",sep="")))
+
   }
 
   if(output=="df"){

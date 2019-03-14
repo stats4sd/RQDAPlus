@@ -5,11 +5,10 @@
 #' @param files vector of files to restrict search to
 #' @keywords RQDA Shiny Network Cloud
 #' @export
-code_overlap<-function(connection=NULL,files=NULL){
+code_overlap<-function(connection=NULL,include="all",case=NULL,code=NULL,files=NULL){
   require(DescTools)
   require(RSQLite)
   require(dplyr)
-  require(RQDA)
   require(plyr)
   require(intervals)
 
@@ -24,8 +23,15 @@ code_overlap<-function(connection=NULL,files=NULL){
 
 
   #get coding dataframes
-  coding<-dbGetQuery(con,"select cid,fid,selfirst,selend,source.name from coding left join source on (coding.fid=source.id)")
+  coding<-dbGetQuery(con,"select cid,fid,selfirst,selend,source.name from coding left join source on
+                     (coding.fid=source.id)")
+
+  cases<-dbGetQuery(con,"select caseid, fid, selfirst, selend,cases.name from caselinkage left join cases on(caselinkage.caseid=cases.id)
+                    ")
+
   colnames(coding)[5]<-"filename"
+
+
   if(is.null(files)==FALSE){
     coding=subset(coding,filename%in%files)
     if(nrow(coding)==0){

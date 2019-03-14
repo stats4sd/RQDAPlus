@@ -22,22 +22,24 @@ ui <- fluidPage(
       sidebarPanel(
         selectizeInput("cases", "Cases", choices = "",multiple = TRUE),
         selectizeInput("codes", "Codes", choices = "",multiple = TRUE),
-        selectizeInput("files", "Files", choices = "",multiple = TRUE)
+        selectizeInput("files", "Files", choices = "",multiple = TRUE),
+        downloadButton("downloadData", "Download Selected Text as CSV"),
+        downloadButton("downloadData2", "Download Selected Text as HTML")
       ),
 
       # Show a plot of the generated distribution
       mainPanel(width = 6,
                 tabsetPanel(
                   type = "tabs",
-    tabPanel("Extracts from Code Overlap",dataTableOutput("Output0"),dataTableOutput("Output1")),
-    tabPanel("Adjacency Matrix",selectInput("type1", "Type:",
-                                        choices = c("Within Document"="Document","Specific Text"="Text")),
+    tabPanel("Extracts from Codes Within Cases",dataTableOutput("Output0"),dataTableOutput("Output1")),
+    tabPanel("WordCloud", wordcloud2Output("cloud1")),
+    tabPanel("Adjacency Matrix",
              dataTableOutput("Output2")),
-    tabPanel("Network Analysis",selectInput("type", "Type", choices = c("Within Document"="Document","Specific Text"="Text")),
+    tabPanel("Network Analysis",
              checkboxInput("group", "Group Nodes?", value=FALSE),
-             plotOutput("Output3")),
-    tabPanel("WordCloud", wordcloud2Output("cloud1"))
-      ))
+             plotOutput("Output3"))
+   )
+      )
    )
 )
 
@@ -50,8 +52,11 @@ server <- function(input, output,session) {
   observe({
 
  fc<-dbGetQuery(con,"select name,id from freecode")
-    avail_codes<- avail_cases<-fc$name[fc$id%in%unique(dbGetQuery(con,"select cid from coding")$cid)]
-
+ fc2<-dbGetQuery(con,"select name,id from cases")
+    avail_codes<-fc$name[fc$id%in%unique(dbGetQuery(con,"select cid from coding")$cid)]
+      avail_cases<-fc2$name[fc$id%in%unique(dbGetQuery(con,"select caseid from caselinkage")$caseid)]
+      avail_cases<-sort(avail_cases)
+      avail_codes<-sort(avail_codes)
     avail_files<-dbGetQuery(con,"select name from source")
 
     updateSelectInput(session, "codes", choices = avail_codes)
@@ -89,62 +94,108 @@ server <- function(input, output,session) {
        out<-data.frame("Case"="No cases selected")
      }
      out
-
    })
 
+   output$downloadData <- downloadHandler(
+     filename = function() {
+       paste("Output",ceiling(round(runif(1,1,1000))), ".csv", sep = "")
+     },
+     content = function(file) {
+       write.csv(codeIncase(input$cases,input$codes,output = "df",connection=connection,files = input$files)[,c(3,4,2,5)],
+                 file, row.names = FALSE)
+     }
+   )
+
+   output$downloadData2  <- downloadHandler(
+     filename = function() {
+       paste("RQDAOutput",ceiling(round(runif(1,1,1000))), ".html", sep = "")
+     },
+     content = function(file) {
+       out<-codeIncase(input$cases,input$codes,output = "df",connection=connection,files = input$files)
+         out$seltext<-paste("<p>",gsub("[\n]","<br></br>",out$seltext),"</p>")
+       export(out[,c(3,4,2,5)],file, row.names = FALSE)
+     }
+   )
+
+
+
+
+
    output$Output2 <- renderDataTable({
-     if(input$type1=="Document"){
-tab<-doc_adjacency(connection=connection,files = input$files)
-     }
-     if(input$type1=="Text"){
-       tab<-code_overlap(connection=connection,files = input$files)
-     }
+
+
+tab<-doc_adjacency(connection=connection,type="unit")
+
+
+
+
 if(length(unique(c(input$cases,input$codes)))>1){
      tab<-tab[colnames(tab)%in%unique(c(input$cases,input$codes)),colnames(tab)%in%unique(c(input$cases,input$codes))]
 }
         tab<-data.frame(Code=rownames(tab),tab)
      rownames(tab)<-NULL
    tab
-   })
+   },options = list(dom = 't'))
 
 
    output$Output3 <- renderPlot(width=800,height=800,{
-     if(input$type=="Document"){
-  RQDAnetwork(doc_adjacency(connection=connection,files = input$files),group=input$group)
-     }
-     if(input$type=="Text"){
-       RQDAnetwork(code_overlap(connection=connection,files = input$files),group=input$group)
-     }
+
+  RQDAnetwork(doc_adjacency(connection=connection,type="unit",
+                            files = input$files,code=input$code,case=input$case),group=input$group)
+
+
    })
    output$cloud1 <- renderWordcloud2({
 
+
      if(is.null(input$cases)){
        if(is.null(input$files)){
-         txt<-dbGetQuery(con,"select seltext from coding")$seltext
+         filelist<-dbGetQuery(con,"select name from source")$name
        }
        else{
-         sources<-dbGetQuery(con,paste("select id from source where name IN",
-                                      paste("('",paste(input$files,collapse="','"),"')",sep=""),sep=""))
-         txt<-dbGetQuery(con,paste("select seltext from coding where fid IN",
-                         paste("('",paste(sources$id,collapse="','"),"')",sep=""),sep=""))$seltext
+         filelist<-input$files
        }
 
+       if(is.null(input$files)&is.null(input$codes)){
+         txt<-dbGetQuery(con,"select file from source")$file
        }
-       else{
+       if((!is.null(input$files))&is.null(input$codes)){
+
+         txt<-dbGetQuery(con,paste("select file from source where name IN",
+                                   paste("('",paste(filelist,collapse="','"),"')",sep=""),sep=""))$file
+       }
+
+       if(!is.null(input$codes)){
+         sources<-dbGetQuery(con,paste("select id from source where name IN",
+                                      paste("('",paste(filelist,collapse="','"),"')",sep=""),sep=""))
+         codes<-dbGetQuery(con,paste("select id from freecode where name IN",
+                                       paste("('",paste(input$codes,collapse="','"),"')",sep=""),sep=""))
+         txt<-dbGetQuery(con,paste("select seltext from coding where fid IN",
+                         paste("('",paste(sources$id,collapse="','"),"')",sep=""),
+                         " and cid IN",
+                         paste("('",paste(codes$id,collapse="','"),"')",sep=""),sep=""))$seltext
+       }
+     }
+
+     if(!is.null(input$cases)){
             txt<-codeIncase(input$cases,input$codes,output = "df",connection=connection,files=input$files)$text
        }
 if(length(txt)>0){
      t1<-removePunctuation(tolower(unlist(str_split(stripWhitespace(txt)," "))))
      t1<-t1[!t1%in%stopwords("english")]
      t2<-data.frame(table(t1))
-
+     t2<-slice(t2[rev(order(t2$Freq)),],1:500)
      wordcloud2(t2,size=0.4)
    }
+   })
+
+   session$onSessionEnded(function() {
+     stopApp()
    })
 
    }
 
 # Run the application
-shinyApp(ui = ui, server = server)
+shinyApp(ui = ui, server = server,options =list(launch.browser = TRUE) )
 
 }

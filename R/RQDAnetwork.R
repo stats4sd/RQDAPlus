@@ -9,6 +9,7 @@
 RQDAnetwork<-function(adj,group=TRUE){
   require(igraph)
   #make network
+
 g <- graph.adjacency(adj, weighted = T, mode = "undirected")
 g <- simplify(g)
 ## Network Graphs
