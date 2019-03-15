@@ -26,7 +26,7 @@ codeIncase <-function(case,code=NULL,output="df",files=NULL,connection=NULL){
   }
 
   #get matching cases
-  caseid<-dbGetQuery(con,paste("select name,id from cases where name IN",
+  caseid<-dbGetQuery(con,paste("select name,id from cases where status=1 and name IN",
                           paste("('",paste(case,collapse="','"),"')",sep=""),sep=""))
 
   #give error if no cases found
@@ -36,15 +36,15 @@ codeIncase <-function(case,code=NULL,output="df",files=NULL,connection=NULL){
   }
 
 
-  pos<-dbGetQuery(con,paste("select fid,caseid,selfirst,selend from caselinkage where caseid IN",
+  pos<-dbGetQuery(con,paste("select fid,caseid,selfirst,selend from caselinkage where status=1 and caseid IN",
                        paste("('",paste(caseid$id,collapse="','"),"')",sep="")
                        ))
 
 
-  coding<-dbGetQuery(con,"select cid,fid,selfirst,selend from coding")
-  freecode<-dbGetQuery(con,"select name,id from freecode")
+  coding<-dbGetQuery(con,"select cid,fid,selfirst,selend from coding where status=1")
+  freecode<-dbGetQuery(con,"select name,id from freecode where status=1")
 
-  source<-dbGetQuery(con,"select name,id from source")
+  source<-dbGetQuery(con,"select name,id from source where status=1")
   colnames(source)<-c("filename","fid")
 
   pos$ID<-1:nrow(pos)
@@ -52,7 +52,7 @@ codeIncase <-function(case,code=NULL,output="df",files=NULL,connection=NULL){
   coding<-inner_join(coding,source,by=c("fid"="fid"))
 
   if(is.null(code)==FALSE){
-    codingid<-dbGetQuery(con,paste("select id,name from freecode where name IN",
+    codingid<-dbGetQuery(con,paste("select id,name from freecode where status=1 and name IN",
                               paste("('",paste(code,collapse="','"),"')",sep=""),sep=""))
 
     if(any(!code%in%codingid$name)){
@@ -83,7 +83,7 @@ codeIncase <-function(case,code=NULL,output="df",files=NULL,connection=NULL){
   }
   outputlist$NewID<-1:nrow(outputlist)
     outputtext<-map_df(outputlist$NewID,
-                     function(x)dbGetQuery(con,paste("select seltext from coding where cid=",
+                     function(x)dbGetQuery(con,paste("select seltext from coding where status=1 and cid=",
                                                 outputlist$cid[outputlist$NewID==x],
                                                 "AND fid=",outputlist$fid[outputlist$NewID==x],
                                                 "AND selfirst=",outputlist$selfirst[outputlist$NewID==x],
