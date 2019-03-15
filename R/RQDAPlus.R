@@ -11,6 +11,7 @@ RQDAPlus<-function(connection){
   require(tm)
   require(stringr)
   require(DBI)
+  require(rio)
 # Define UI for application that draws a histogram
 ui <- fluidPage(
 
