@@ -1,7 +1,7 @@
 Package: RQDAPlus
 Type: Package
 Title: Add-Ons for RQDA Through Shiny Interface
-Version: 0.1.0
+Version: 0.1.1
 Author: Sam Dumble
 Maintainer: Sam Dumble <s.dumble@stats4sd.org>
 Description: Shiny interface for additional analysis not implemented within RQDA using an rqda project file
