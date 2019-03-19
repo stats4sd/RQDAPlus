@@ -104,6 +104,7 @@ server <- function(input, output,session) {
         codes<-NULL
       }
       else{
+        fc3<-dbGetQuery(con,"select name,catid from codecat")
         codes1<-dbGetQuery(con,paste("select cid from treecode where catid IN",
                                      paste("('",paste(fc3$catid[fc3$name%in%input$codes],collapse="','"),"')",sep="")))$cid
         codes<-dbGetQuery(con,paste("select name from freecode where id IN",
@@ -137,6 +138,7 @@ server <- function(input, output,session) {
          codes<-NULL
        }
        else{
+         fc3<-dbGetQuery(con,"select name,catid from codecat")
          codes1<-dbGetQuery(con,paste("select cid from treecode where catid IN",
                                       paste("('",paste(fc3$catid[fc3$name%in%input$codes],collapse="','"),"')",sep="")))$cid
          codes<-dbGetQuery(con,paste("select name from freecode where id IN",
@@ -174,6 +176,7 @@ server <- function(input, output,session) {
            codes<-NULL
          }
          else{
+           fc3<-dbGetQuery(con,"select name,catid from codecat")
            codes1<-dbGetQuery(con,paste("select cid from treecode where catid IN",
                                         paste("('",paste(fc3$catid[fc3$name%in%input$codes],collapse="','"),"')",sep="")))$cid
            codes<-dbGetQuery(con,paste("select name from freecode where id IN",
@@ -200,6 +203,7 @@ server <- function(input, output,session) {
            codes<-NULL
          }
          else{
+           fc3<-dbGetQuery(con,"select name,catid from codecat")
            codes1<-dbGetQuery(con,paste("select cid from treecode where catid IN",
                                         paste("('",paste(fc3$catid[fc3$name%in%input$codes],collapse="','"),"')",sep="")))$cid
            codes<-dbGetQuery(con,paste("select name from freecode where id IN",
@@ -231,6 +235,7 @@ else{
     codes<-NULL
   }
   else{
+    fc3<-dbGetQuery(con,"select name,catid from codecat")
     codes1<-dbGetQuery(con,paste("select cid from treecode where catid IN",
                                  paste("('",paste(fc3$catid[fc3$name%in%input$codes],collapse="','"),"')",sep="")))$cid
     codes<-dbGetQuery(con,paste("select name from freecode where id IN",
@@ -258,6 +263,7 @@ if(length(unique(c(input$cases,codes)))>1){
          codes<-NULL
        }
        else{
+         fc3<-dbGetQuery(con,"select name,catid from codecat")
          codes1<-dbGetQuery(con,paste("select cid from treecode where catid IN",
                                       paste("('",paste(fc3$catid[fc3$name%in%input$codes],collapse="','"),"')",sep="")))$cid
          codes<-dbGetQuery(con,paste("select name from freecode where id IN",
@@ -280,6 +286,7 @@ if(length(unique(c(input$cases,codes)))>1){
          codes<-NULL
        }
        else{
+         fc3<-dbGetQuery(con,"select name,catid from codecat")
          codes1<-dbGetQuery(con,paste("select cid from treecode where catid IN",
                                       paste("('",paste(fc3$catid[fc3$name%in%input$codes],collapse="','"),"')",sep="")))$cid
          codes<-dbGetQuery(con,paste("select name from freecode where id IN",
