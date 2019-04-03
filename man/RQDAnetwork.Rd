@@ -4,7 +4,7 @@
 \alias{RQDAnetwork}
 \title{RQDAnetwork}
 \usage{
-RQDAnetwork(adj, group = TRUE)
+RQDAnetwork(adj, group = TRUE, maxnodes = 999)
 }
 \arguments{
 \item{adj}{adjacency matrix}

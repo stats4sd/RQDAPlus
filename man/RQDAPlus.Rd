@@ -4,13 +4,18 @@
 \alias{RQDAPlus}
 \title{RQDAPlus}
 \usage{
-RQDAPlus(connection)
+RQDAPlus(connection = NULL)
 }
 \arguments{
 \item{connection}{.rqda project file}
 }
 \description{
-Shiny interface to additional features using an RQDA project file
+Shiny interface to additional features using an RQDA project file. Currently
+implemented options for i) subsetting coded extracts to within certain codes
+WordClouds of extracts, or overall text, or individual files Adjacency
+matrices based on code occurence at within document and within case level
+Network analysis based on code co-occurence at either within document or
+within case level, with optional additional grouping algorithm
 }
 \keyword{Cloud}
 \keyword{Network}

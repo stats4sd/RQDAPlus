@@ -5,7 +5,7 @@
 \title{doc_adjacency}
 \usage{
 doc_adjacency(connection = NULL, type = "product", include = "all",
-  case = NULL, code = NULL, files = NULL)
+  case = NULL, code = NULL, files = NULL, level = "Document")
 }
 \arguments{
 \item{connection}{.rqda project file}
