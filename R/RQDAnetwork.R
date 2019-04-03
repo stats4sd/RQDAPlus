@@ -15,7 +15,7 @@ RQDAnetwork<-function(adj,group=TRUE,maxnodes=999){
 
   maxnodes[maxnodes>nrow(adj)]<-nrow(adj)
 
-  adj<-adj[order(colSums(adjmat),decreasing = TRUE)[1:maxnodes],order(colSums(adjmat),decreasing = TRUE)[1:maxnodes]]
+  adj<-adj[order(colSums(adj),decreasing = TRUE)[1:maxnodes],order(colSums(adj),decreasing = TRUE)[1:maxnodes]]
 
 
 g <- graph.adjacency(adj, weighted = T, mode = "undirected")
