@@ -7,7 +7,7 @@
 #' @keywords RQDA Shiny Network Cloud
 #' @export
 
-doc_adjacency<-function(connection=NULL,type="product",include="all",case=NULL,code=NULL,files=NULL){
+doc_adjacency<-function(connection=NULL,type="product",include="all",case=NULL,code=NULL,files=NULL,level="Document"){
 require(igraph)
 require(reshape2)
   require(RSQLite)
@@ -22,7 +22,7 @@ require(reshape2)
   }
 
 
-  if(include=="all"){
+  if(level=="Document"){
   #copy-paste the getCodingTable() function to allow connection to SQL DB
   Codings <- dbGetQuery(con, "select coding.rowid as rowid, coding.cid,
                         coding.fid, freecode.name as codename, source.name as filename,\n
@@ -33,14 +33,22 @@ require(reshape2)
                         where coding.status==1 and source.status=1 and freecode.status=1")[,c(5, 4)]
 
   }
-  if(include=="selection"&is.null(case)==FALSE){
-    Codings <- codeIncase(case=case,code=code,output="df",files=files,connection=connection)
+  if(level=="Case"){
+
+    fc2<-dbGetQuery(con,"select name,id from cases")
+
+    avail_cases<-fc2$name[fc2$id%in%unique(dbGetQuery(con,"select caseid from caselinkage")$caseid)]
+
+
+    Codings <- codeIncase(case=avail_cases,code=NULL,output="df",connection=connection)
+
+
     if(ncol(Codings)==1){
       stop("No selected codes found in selected cases")
     }
     else{
-      Codings<-Codings[,c(3,2)]
-      colnames(Codings)[2]<-"codename"
+      Codings<-Codings[,c(6,2)]
+      colnames(Codings)<-c("filename","codename")
     }
   }
 

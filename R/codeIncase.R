@@ -75,7 +75,7 @@ codeIncase <-function(case,code=NULL,output="df",files=NULL,connection=NULL){
 
 
   outputlist<-map_df(pos$ID,function(x)
-    data.frame(subset(mutate(coding,Case=caseid$name[caseid$id==pos$caseid[pos$ID==x]]),
+    data.frame(subset(mutate(coding,Case=caseid$name[caseid$id==pos$caseid[pos$ID==x]],xID=x),
                       fid==pos$fid[x]&selfirst>=pos$selfirst[x]&selend<=pos$selend[x])))
 
   if(nrow(outputlist)==0){
@@ -83,15 +83,18 @@ codeIncase <-function(case,code=NULL,output="df",files=NULL,connection=NULL){
   }
   outputlist$NewID<-1:nrow(outputlist)
     outputtext<-map_df(outputlist$NewID,
-                     function(x)dbGetQuery(con,paste("select seltext from coding where status=1 and cid=",
+                     function(x)data.frame(y=x,seltext=dbGetQuery(con,paste("select seltext from coding where status=1 and cid=",
                                                 outputlist$cid[outputlist$NewID==x],
                                                 "AND fid=",outputlist$fid[outputlist$NewID==x],
                                                 "AND selfirst=",outputlist$selfirst[outputlist$NewID==x],
-                                                "AND selend=",outputlist$selend[outputlist$NewID==x])))
+                                                "AND selend=",outputlist$selend[outputlist$NewID==x]))$seltext))
 
-  list1<-outputlist %>% inner_join(freecode,by=c("cid"="id"))%>%
-    select(selfirst,name,filename,Case) %>% cbind(outputtext)
-  colnames(list1)<-c("position","code","filename","Case","text")
+    outputtext<-outputtext[!duplicated(outputtext$y),]
+
+  list1<-outputlist %>% left_join(freecode,by=c("cid"="id"))%>%
+    select(selfirst,name,filename,Case,xID) %>% cbind(outputtext$seltext) %>% filter(is.na(name)==FALSE)
+  colnames(list1)<-c("position","code","filename","Case","ID","text")
+  list1<-list1[,c(1:4,6,5)]
   list1$text<-trimws(list1$text)
   if(output=="HTML"){
     filename=paste("Output",ceiling(round(runif(1,1,1000))+as.numeric(Sys.time())/1000),sep="_")

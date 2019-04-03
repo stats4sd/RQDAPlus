@@ -1,10 +1,15 @@
 #' RQDAPlus
 #'
-#' Shiny interface to additional features using an RQDA project file
+#' Shiny interface to additional features using an RQDA project file. Currently
+#' implemented options for i) subsetting coded extracts to within certain codes
+#' WordClouds of extracts, or overall text, or individual files Adjacency
+#' matrices based on code occurence at within document and within case level
+#' Network analysis based on code co-occurence at either within document or
+#' within case level, with optional additional grouping algorithm
 #' @param connection .rqda project file
 #' @keywords RQDA Shiny Network Cloud
 #' @export
-RQDAPlus<-function(connection){
+RQDAPlus<-function(connection=NULL){
   require(shiny)
   require(DT)
   require(wordcloud2)
@@ -31,24 +36,42 @@ ui <- fluidPage(
 
       # Show a plot of the generated distribution
       mainPanel(width = 6,
-                tabsetPanel(
-                  type = "tabs",
-    tabPanel("Extracts from Codes Within Cases",dataTableOutput("Output0"),dataTableOutput("Output1")),
-    tabPanel("WordCloud", wordcloud2Output("cloud1")),
-    tabPanel("Adjacency Matrix",
+                tabsetPanel(type = "tabs",
+    tabPanel("Extracts from Codes Within Cases",
+             htmlOutput("Title1"),
+             dataTableOutput("Output0"),
+             dataTableOutput("Output1")),
+    tabPanel("WordCloud",htmlOutput("Title4"),wordcloud2Output("cloud1")),
+    tabPanel("Adjacency Matrix",htmlOutput("Title2"),
+             selectInput("AdjType","Adjacency of Codes Within:",choices=c("Document","Case")),
              dataTableOutput("Output2")),
-    tabPanel("Network Analysis",
+    tabPanel("Network Analysis",htmlOutput("Title3"),
+             selectInput("NetType","Adjacency of Codes Within:",choices=c("Document","Case")),
              checkboxInput("group", "Group Nodes?", value=FALSE),
+             numericInput("max", "Maximum Nodes to Include", value=75),
              plotOutput("Output3"))
-   )
+   ,tags$style("#Title1{color: black;
+                                 font-size: 22px;
+                        font-style: bold;}"),
+   tags$style("#Title2{color: black;
+                                 font-size: 22px;
+               font-style: bold;}"),
+   tags$style("#Title3{color: black;
+                                 font-size: 22px;
+                        font-style: bold;}"),
+   tags$style("#Title4{color: black;
+                                 font-size: 22px;
+                        font-style: bold;}")))
       )
-   )
+
 )
 
 # Define server logic required to draw a histogram
 server <- function(input, output,session) {
 
-  con <- dbConnect(RSQLite::SQLite(), connection)
+
+    con <- dbConnect(RSQLite::SQLite(), connection)
+
 
 
   observe({
@@ -70,7 +93,7 @@ server <- function(input, output,session) {
 
 
       }
-    else{
+      if(input$codcat=="Category"){
     updateSelectInput(session, "codes", choices = avail_cats)
      }
 
@@ -94,7 +117,32 @@ server <- function(input, output,session) {
 
 
 
+  output$Title1<-renderText({
+    if(input$codcat=="Code"){x=paste("Frequency of code(s)",paste(input$codes,collapse=", "),
+                                     "found within case(s)",paste(input$cases,collapse=", "))}
+    else{x=paste("Frequency of code category(s)",paste(input$codes,collapse=", "),
+                                     "found within case(s)",paste(input$cases,collapse=", "))}
+    x
+  })
 
+  output$Title2<-renderText({
+   paste("Adjacency matrix showing code co-occurence within each",tolower(input$AdjType),sep=" ")
+     })
+
+  output$Title3<-renderText({
+   if(input$group==FALSE){y=paste("Network analysis based on code co-occurence within each",tolower(input$NetType),sep=" ")}
+    if(input$group==TRUE){y=paste("Network analysis based on code co-occurence within each",tolower(input$NetType),
+                                "with clustering of related codes",sep=" ")}
+    y
+  })
+
+  output$Title4<-renderText({
+    if(input$codcat=="Code"){x=paste("Wordcloud of entries coded",paste(input$codes,collapse=", "),
+                                     "found within case(s)",paste(input$cases,collapse=", "))}
+    else{x=paste("Wordcloud of entries coded within the category(s) of",paste(input$codes,collapse=", "),
+                 "found within case(s)",paste(input$cases,collapse=", "))}
+    x
+  })
   output$Output0 <- renderDataTable({
     if(input$codcat=="Code"){
       codes<-input$codes
@@ -225,7 +273,7 @@ server <- function(input, output,session) {
    output$Output2 <- renderDataTable({
 
 
-tab<-doc_adjacency(connection=connection,type="unit")
+tab<-doc_adjacency(connection=connection,type="unit",level=input$AdjType)
 
 if(input$codcat=="Code"){
   codes<-input$codes
@@ -272,8 +320,8 @@ if(length(unique(c(input$cases,codes)))>1){
      }
 
 
-  RQDAnetwork(doc_adjacency(connection=connection,type="unit",
-                            files = input$files,code=codes,case=input$case),group=input$group)
+  RQDAnetwork(doc_adjacency(connection=connection,type="unit",level=input$NetType),group=input$group,
+              maxnodes = input$max)
 
 
    })
@@ -330,12 +378,14 @@ if(length(txt)>0){
      t1<-removePunctuation(tolower(unlist(str_split(stripWhitespace(txt)," "))))
      t1<-t1[!t1%in%stopwords("english")]
      t2<-data.frame(table(t1))
-     t2<-slice(t2[rev(order(t2$Freq)),],1:500)
-     wordcloud2(t2,size=0.4)
+     t2<-slice(t2[rev(order(t2$Freq)),],1:250)
+
+     wordcloud2(t2,size=0.7)
    }
    })
 
    session$onSessionEnded(function() {
+     dbDisconnect(con)
      stopApp()
    })
 
