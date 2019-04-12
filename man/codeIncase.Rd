@@ -2,26 +2,29 @@
 % Please edit documentation in R/codeIncase.R
 \name{codeIncase}
 \alias{codeIncase}
-\title{codeIncase}
+\title{codecase}
 \usage{
-codeIncase(case, code = NULL, output = "df", files = NULL,
-  connection = NULL)
+codeIncase(case, code = NULL, files = NULL, connection = NULL,
+  output = "df")
 }
 \arguments{
-\item{case}{vector of "cases"}
+\item{case}{vector of "cases" to include as search domain}
 
 \item{code}{vector of "codes" to search within the "cases"}
 
-\item{output}{output format df=data frame ; HTML = HTML file}
-
-\item{files}{vector of files to restrict search to}
+\item{files}{vector of files to include as search domain}
 
 \item{connection}{.rqda project file}
+
+\item{output}{output format df=data frame ; HTML = HTML file}
 }
 \description{
 Find overlap in highlighted text between "codes" and "cases"
 }
+\keyword{Case}
 \keyword{Cloud}
+\keyword{Code}
 \keyword{Network}
+\keyword{Overlaps}
 \keyword{RQDA}
 \keyword{Shiny}
