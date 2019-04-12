@@ -1,15 +1,15 @@
-#' codeIncase
+#' codecase
 #'
 #' Find overlap in highlighted text between "codes" and "cases"
-#' @param case vector of "cases"
+#' @param case vector of "cases" to include as search domain
 #' @param code vector of "codes" to search within the "cases"
 #' @param output output format df=data frame ; HTML = HTML file
-#' @param files vector of files to restrict search to
+#' @param files vector of files to include as search domain
 #' @param connection .rqda project file
-#' @keywords RQDA Shiny Network Cloud
+#' @keywords RQDA Shiny Network Cloud Code Case Overlaps
 #' @export
 
-codeIncase <-function(case,code=NULL,output="df",files=NULL,connection=NULL){
+codecase <-function(case,code=NULL,files=NULL,connection=NULL){
   require(R2HTML)
   require(purrr)
   require(dplyr)
@@ -18,111 +18,65 @@ codeIncase <-function(case,code=NULL,output="df",files=NULL,connection=NULL){
 
 
   #pick up link to SQL database
-  if(!is.null(connection)){
-    con <- dbConnect(RSQLite::SQLite(), connection)
-  }
-  else{
-    con <- .rqda$qdacon
-  }
 
-  #get matching cases
-  caseid<-dbGetQuery(con,paste("select name,id from cases where status=1 and name IN",
-                          paste("('",paste(case,collapse="','"),"')",sep=""),sep=""))
+  con <- dbConnect(RSQLite::SQLite(), connection)
 
+
+  #get matching case id information from cases table
+  caseid<-dbGetQuery(con,"select name,id from cases where status=1")
   #give error if no cases found
   if(any(!case%in%caseid$name)){
     tmp<-case[!case%in%caseid$name]
-    stop(paste("No case '",paste(tmp,collapse="','"),"' found in database",sep=""))
+      stop(paste("No case '",paste(tmp,collapse="','"),"' found in database",sep=""))
   }
 
 
-  pos<-dbGetQuery(con,paste("select fid,caseid,selfirst,selend from caselinkage where status=1 and caseid IN",
-                       paste("('",paste(caseid$id,collapse="','"),"')",sep="")
-                       ))
 
+  #get coding table from freecode
+  codingid<-dbGetQuery(con,"select id,name from freecode where status=1")
 
-  coding<-dbGetQuery(con,"select cid,fid,selfirst,selend from coding where status=1")
-  freecode<-dbGetQuery(con,"select name,id from freecode where status=1")
-
-  source<-dbGetQuery(con,"select name,id from source where status=1")
-  colnames(source)<-c("filename","fid")
-
-  pos$ID<-1:nrow(pos)
-  coding$ID<-1:nrow(coding)
-  coding<-inner_join(coding,source,by=c("fid"="fid"))
-
+ #if no codes selected then conduct search based on all codes
   if(is.null(code)==FALSE){
-    codingid<-dbGetQuery(con,paste("select id,name from freecode where status=1 and name IN",
-                              paste("('",paste(code,collapse="','"),"')",sep=""),sep=""))
-
+  #return error if selected codes not found
     if(any(!code%in%codingid$name)){
       tmp<-code[!code%in%codingid$name]
-      stop(paste("No code '",paste(tmp,collapse="','"),"' found in database",sep=""))
+       stop(paste("No code '",paste(tmp,collapse="','"),"' found in database",sep=""))
     }
-
-
-    coding<-subset(coding,cid%in%as.integer(codingid$id))
+  }
+  else{
+    code<-unique(codingid$name)
   }
 
+  #get file information from source table
+  source<-dbGetQuery(con,"select name,id from source where status=1")
 
+  #if file restriction included then restrict files to only those in selected files
   if(is.null(files)==FALSE){
-    coding=subset(coding,filename%in%files)
-    if(nrow(coding)==0){
-      stop("No selected codes found in selected files")
+    if(any(!files%in%source$name)){
+      tmp<-files[!files%in%source$name]
+      stop(paste("No file '",paste(tmp,collapse="','"),"' found in database",sep=""))
     }
   }
+else{
+  files<-unique(source$name)
+}
+
+  list1<- dbGetQuery(con,paste(
+"SELECT coding.selfirst AS 'position', freecode.name AS 'code', source.name 'filename',
+cases.name AS 'Case', coding.seltext AS 'text' FROM cases
+INNER JOIN coding, source, caselinkage, freecode ON freecode.id=coding.cid
+AND caselinkage.selfirst<=coding.selfirst AND coding.fid=source.id AND caselinkage.selend>=coding.selend
+AND caselinkage.caseid=cases.id AND caselinkage.fid = source.id
+AND cases.name IN", paste("('",paste(case,collapse="','"),"')",sep=""),
+"AND freecode.name IN", paste("('",paste(code,collapse="','"),"')",sep=""),
+"AND source.name IN", paste("('",paste(files,collapse="','"),"')",sep=""),
+"AND freecode.status=1 AND cases.status=1  AND caselinkage.status=1 AND source.status=1
+AND coding.status=1 ORDER BY coding.selfirst"),sep="")
 
 
+dbDisconnect(con)
 
-  outputlist<-map_df(pos$ID,function(x)
-    data.frame(subset(mutate(coding,Case=caseid$name[caseid$id==pos$caseid[pos$ID==x]],xID=x),
-                      fid==pos$fid[x]&selfirst>=pos$selfirst[x]&selend<=pos$selend[x])))
+return(list1)
 
-  if(nrow(outputlist)==0){
-    return(data.frame(Case=(paste("No instances of '",code,"' found in '",case,"'",sep=""))))
-  }
-  outputlist$NewID<-1:nrow(outputlist)
-    outputtext<-map_df(outputlist$NewID,
-                     function(x)data.frame(y=x,seltext=dbGetQuery(con,paste("select seltext from coding where status=1 and cid=",
-                                                outputlist$cid[outputlist$NewID==x],
-                                                "AND fid=",outputlist$fid[outputlist$NewID==x],
-                                                "AND selfirst=",outputlist$selfirst[outputlist$NewID==x],
-                                                "AND selend=",outputlist$selend[outputlist$NewID==x]))$seltext))
 
-    outputtext<-outputtext[!duplicated(outputtext$y),]
-
-  list1<-outputlist %>% left_join(freecode,by=c("cid"="id"))%>%
-    select(selfirst,name,filename,Case,xID) %>% cbind(outputtext$seltext) %>% filter(is.na(name)==FALSE)
-  colnames(list1)<-c("position","code","filename","Case","ID","text")
-  list1<-list1[,c(1:4,6,5)]
-  list1$text<-trimws(list1$text)
-  if(output=="HTML"){
-    filename=paste("Output",ceiling(round(runif(1,1,1000))+as.numeric(Sys.time())/1000),sep="_")
-  HTMLStart(outdir=getwd(),filename =filename,
-            extension="html", echo=FALSE, HTMLframe=FALSE)
-  for(j in 1:length(case)){
-
-    tmp<-subset(list1,Case==case[j])
-    if(nrow(tmp)>0){
-    HTML.title(paste(paste(code,collapse=","),"codes within",case[j]), HR=1)
-  for(i in 1:nrow(tmp)){
-    HTML.title(paste("file:",tmp$filename[i]," code:",tmp$code[i]), HR=2)
-   HTMLhr()
-    R2HTML::HTML(tmp$text[i])
-
-  }
-    }
-  }
-
-  HTMLStop()
-
-  }
-
-  if(output=="df"){
-
-    return(list1)
-  }
-  if(!is.null(connection)){
-    dbDisconnect(con)
-  }
 }

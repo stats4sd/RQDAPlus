@@ -61,8 +61,10 @@ ui <- fluidPage(
                         font-style: bold;}"),
    tags$style("#Title4{color: black;
                                  font-size: 22px;
-                        font-style: bold;}")))
+                        font-style: bold;}")
       )
+      )
+   )
 
 )
 
@@ -298,7 +300,7 @@ if(length(unique(c(input$cases,codes)))>1){
         tab<-data.frame(Code=rownames(tab),tab)
      rownames(tab)<-NULL
    tab
-   },options = list(dom = 't'))
+   })
 
 
    output$Output3 <- renderPlot(width=800,height=800,{
