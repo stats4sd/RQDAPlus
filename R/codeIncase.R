@@ -9,7 +9,7 @@
 #' @keywords RQDA Shiny Network Cloud Code Case Overlaps
 #' @export
 
-codecase <-function(case,code=NULL,files=NULL,connection=NULL){
+codeIncase <-function(case,code=NULL,files=NULL,connection=NULL){
   require(R2HTML)
   require(purrr)
   require(dplyr)
