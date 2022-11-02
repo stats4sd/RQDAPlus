@@ -1,9 +1,9 @@
 # RQDAPlus
-RQDA Shiny Add On
+This repository contains the R package _Add-Ons for RQDA Through Shiny Interface_, Shiny interface for additional analysis not implemented within RQDA using an rqda project file
 
-Install using:
+## Install Package:
 devtools::install_github("sdumble1/RQDAPlus")
 
-Use using:
+## Use Package:
 
 RQDAPlus::RQDAPlus("C:/Users/Me/MyRQDAProject.rqda")
